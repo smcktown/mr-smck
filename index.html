@@ -463,7 +463,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.9.0';
+const VERSION = '0.10.0';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -2255,6 +2255,98 @@ function practiceHTML(){
   return h;
 }
 
+/* ---------------- SCHOOL YEAR ROLLOVER ---------------- */
+const LEVELS = ['P1','P2','P3','P4','P5','P6'];
+function nextLevel(lv){ const i=LEVELS.indexOf(lv); return (i>=0 && i<LEVELS.length-1) ? LEVELS[i+1] : lv; }
+function schoolYear(){ return new Date().getFullYear(); }
+
+function openNewYear(){
+  const yr = schoolYear();
+  const m = $('modal');
+  m.innerHTML = `<div class="mback" onclick="closeModal()"></div>
+  <div class="msheet"><div class="grab"></div>
+    <h3 style="font-size:17px;font-weight:800;margin-bottom:6px">🎓 Start a new school year</h3>
+    <div class="muted small" style="margin-bottom:14px">This <b>archives</b> everyone's ${yr} plan — syllabus, exams and captured photos — so you can still browse it under <b>Past years</b>, then moves each kid up a grade with a clean slate.<br><br>✅ <b>Pets, collections and streaks are kept.</b></div>
+    <div class="field"><label>Promote each kid</label>
+      ${S.kids.map(k=>`<div class="kidrowitem">
+        <span class="dot" style="background:${k.color}"></span>
+        <span style="flex:1;font-weight:700">${esc(k.name)} <span class="muted small">· ${esc(k.level)} →</span></span>
+        <select id="ny_${esc(k.id)}" style="padding:7px 10px;border-radius:9px;border:1.5px solid var(--line);font-weight:700;background:var(--card);color:var(--ink)">${LEVELS.map(l=>`<option ${l===nextLevel(k.level)?'selected':''}>${l}</option>`).join('')}</select>
+      </div>`).join('')}
+    </div>
+    <div class="muted small" style="background:var(--orange-soft);color:#8a5a10;padding:10px 12px;border-radius:12px;margin-bottom:12px">⚠️ Back up first — this can only be undone by restoring a backup.</div>
+    <button class="btn sec" onclick="exportBackup()">⬇️ Back up now</button>
+    <button class="btn" style="margin-top:8px" onclick="confirmNewYear(${yr})">🎓 Archive ${yr} &amp; promote</button>
+  </div>`;
+  m.classList.add('open');
+}
+
+async function confirmNewYear(yr){
+  const picks = {};
+  S.kids.forEach(k=>{ const el=$('ny_'+k.id); picks[k.id] = el ? el.value : nextLevel(k.level); });
+  closeModal();
+  confirmDlg(`Archive the ${yr} school year and start fresh? Pets, collections and streaks stay. This can only be undone with a backup.`, 'Start new year', async ()=>{
+    try{
+      for(const k of S.kids){
+        if(!k.archives) k.archives = [];
+        k.archives.push({
+          year: yr, level: k.level,
+          syllabus: k.syllabus || {},
+          exams: (k.plan && k.plan.exams) || [],
+          sessions: LOG.filter(l=>l.kidId===k.id).length,
+          best: bestStreak(k),
+          pets: (k.collection||[]).length,
+          endedOn: todayStr()
+        });
+        for(const c of CAPS){
+          if(c.kidId===k.id && !c.archived){ c.archived=true; c.archivedYear=yr; await idbPut(c); }
+        }
+        k.level = picks[k.id] || k.level;
+        k.syllabus = {};
+        if(k.plan){ k.plan.exams=[]; k.plan.blackouts=[]; k.plan.overrides={}; k.plan.anchor=todayStr(); }
+      }
+      saveS();
+      toast('🎓 New school year started!');
+      render();
+    }catch(err){ toast('⚠️ Rollover failed: '+err.message); }
+  });
+}
+
+function archivesHTML(k){
+  if(!k || !k.archives || !k.archives.length) return '';
+  const rows = k.archives.map((a,i)=>({a,i})).reverse();
+  return `<div class="card"><h3>Past years</h3>
+    <div class="muted small" style="margin-bottom:8px">Archived plans for ${esc(k.name)} — browse anytime.</div>
+    ${rows.map(({a,i})=>`<div class="kidrowitem">
+      <span style="flex:1;font-weight:700">${a.year} · ${esc(a.level)}</span>
+      <span class="muted small" style="margin-right:8px">${a.sessions} session${a.sessions===1?'':'s'} · 🏆${a.best}</span>
+      <button class="btn sec sm" onclick="viewArchive('${esc(k.id)}',${i})">View</button>
+    </div>`).join('')}
+  </div>`;
+}
+
+function viewArchive(kidId, i){
+  const k = kidById(kidId); if(!k||!k.archives||!k.archives[i]) return;
+  const a = k.archives[i];
+  const caps = CAPS.filter(c=>c.kidId===kidId && c.archivedYear===a.year);
+  const syl = a.syllabus || {};
+  const sylKeys = Object.keys(syl).filter(s=>syl[s] && syl[s].length);
+  const exams = (a.exams||[]).slice().sort((x,y)=>(x.date||'').localeCompare(y.date||''));
+  const m = $('modal');
+  m.innerHTML = `<div class="mback" onclick="closeModal()"></div>
+  <div class="msheet"><div class="grab"></div>
+    <h3 style="font-size:17px;font-weight:800;margin-bottom:2px">${a.year} · ${esc(k.name)} <span class="muted">(${esc(a.level)})</span></h3>
+    <div class="muted small" style="margin-bottom:14px">${a.sessions} study session${a.sessions===1?'':'s'} · best streak 🏆${a.best} · ${caps.length} photo${caps.length===1?'':'s'} archived</div>
+    <div style="font-weight:800;font-size:14px;margin-bottom:6px">📚 Syllabus</div>
+    ${sylKeys.length ? sylKeys.map(s=>`<div style="margin-bottom:8px"><span style="font-weight:700">${esc(subjName(s))}</span><div class="muted small">${syl[s].map(c=>esc(c.t||c)).join(' · ')}</div></div>`).join('') : '<div class="muted small" style="margin-bottom:10px">No syllabus recorded.</div>'}
+    <div style="font-weight:800;font-size:14px;margin:12px 0 6px">📝 Exams</div>
+    ${exams.length ? exams.map(e=>`<div class="muted small">${esc(e.date||'—')} · ${esc(subjName(e.subject))}${e.name?' · '+esc(e.name):''}</div>`).join('') : '<div class="muted small">No exams recorded.</div>'}
+    <div class="muted small" style="margin-top:12px">Archived photos stay in <b>Capture → filter → Archived</b>.</div>
+    <button class="btn sec" style="margin-top:14px" onclick="closeModal()">Close</button>
+  </div>`;
+  m.classList.add('open');
+}
+
 /* ---------------- MORE ---------------- */
 function moreHTML(){
   return `
@@ -2271,6 +2363,11 @@ function moreHTML(){
     <div class="muted small" style="margin-bottom:10px">A playful view for ${esc(activeKid()?activeKid().name:'your kid')} — their pet to feed, today's study, and what's coming up. No settings or scores.</div>
     <button class="btn sec" onclick="enterKidMode()">🧒 Enter kid view</button>
   </div>
+  <div class="card"><h3>School year</h3>
+    <div class="muted small" style="margin-bottom:10px">When the year ends, archive everyone's plan and move them up a grade. Syllabus, exams and photos are kept in <b>Past years</b>; pets &amp; collections carry over.</div>
+    <button class="btn sec" onclick="openNewYear()">🎓 Start a new school year</button>
+  </div>
+  ${archivesHTML(activeKid())}
   <div class="card"><h3>Backup</h3>
     <div class="muted small" style="margin-bottom:10px">All data lives only on this phone. Back up regularly — deleting the app icon or clearing Safari data erases everything.</div>
     <button class="btn sec" onclick="exportBackup()">⬇️ Download backup</button>
