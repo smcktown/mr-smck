@@ -85,9 +85,9 @@ input,select,textarea{font:inherit;color:inherit}
 /* ---------- buttons & chips ---------- */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  background:linear-gradient(180deg,#4f92ff,#3a86ff 60%,#2f78ee);color:#fff;font-weight:700;font-size:16px;
+  background:linear-gradient(180deg,#a68fda,#9878c9 58%,#8360b8);color:#fff;font-weight:700;font-size:16px;
   padding:14px 20px;border-radius:14px;width:100%;
-  box-shadow:0 4px 12px rgba(58,134,255,.32), inset 0 1px 0 rgba(255,255,255,.35);
+  box-shadow:0 4px 12px rgba(122,90,170,.34), inset 0 1px 0 rgba(255,255,255,.35);
   transition:transform .1s;
 }
 .btn:active{transform:scale(.98)}
@@ -175,7 +175,7 @@ input,select,textarea{font:inherit;color:inherit}
 
 /* ---------- pet habitat ---------- */
 .habitat{
-  text-align:center;border-radius:20px;padding:16px 14px 14px;margin-top:6px;
+  text-align:center;border-radius:20px;padding:16px 14px 14px;margin-top:6px;position:relative;
   background:linear-gradient(180deg,#c6abe4 0%, #eec2d4 52%, #f6ead4 100%);
   border:1px solid #d7c4ea;
 }
@@ -198,16 +198,16 @@ input,select,textarea{font:inherit;color:inherit}
 @keyframes eggwobble{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
 @keyframes petbounce{0%{transform:scale(1)}25%{transform:scale(1.28) translateY(-10px) rotate(-6deg)}55%{transform:scale(.93) rotate(4deg)}100%{transform:scale(1)}}
 .petbubble{
-  display:inline-block;margin:0 auto 2px;max-width:200px;
+  position:absolute;left:50%;top:6px;z-index:6;margin:0;max-width:200px;pointer-events:none;
   background:var(--card);color:var(--ink);font-weight:800;font-size:14px;
   padding:6px 13px;border-radius:14px;box-shadow:0 3px 10px rgba(70,50,130,.18);
-  opacity:0;transform:translateY(6px) scale(.8);transition:all .18s;position:relative}
+  opacity:0;transform:translateX(-50%) translateY(6px) scale(.8);transition:all .18s}
 .petbubble::after{content:'';position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);
   border:6px solid transparent;border-top-color:var(--card);border-bottom:0}
-.petbubble.show{opacity:1;transform:translateY(0) scale(1)}
+.petbubble.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
 .floaty{position:fixed;z-index:95;pointer-events:none;font-size:24px;animation:floatup 1.1s ease-out forwards}
 @keyframes floatup{0%{opacity:1;transform:translateY(0) scale(.6)}30%{opacity:1;transform:translateY(-18px) scale(1.1)}100%{opacity:0;transform:translateY(-64px) scale(1)}}
-.petwrap{position:relative;display:inline-block}
+.petwrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
 .petimg{height:1em;width:auto;vertical-align:middle;display:inline-block}
 .blob{display:inline-block;width:.86em;height:.78em;vertical-align:middle;position:relative;
   border-radius:52% 48% 46% 54% / 60% 58% 44% 42%;
@@ -2455,8 +2455,7 @@ function renderSetup(){
   $('app').innerHTML = `<div class="setup">
     <div class="hero">
       <img class="mark" src="${document.querySelector('link[rel="apple-touch-icon"]').href}" alt="MR.SMCK">
-      <h1>MR.SMCK</h1>
-      <div class="sub">Snap spelling lists, 听写, chapters & exams — study every day to hatch and grow your pet! 🥚</div>
+      <div class="sub">Snap spelling lists, 听写, chapters & exams — study every day to hatch and grow your pet! 🐣</div>
     </div>
     <div class="card"><h3>Your kids</h3>
       <div id="setupKids">${S.kids.length ? S.kids.map(k=>`<div class="kidrowitem">
