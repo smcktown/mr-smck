@@ -473,7 +473,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.13.1';
+const VERSION = '0.13.2';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -2645,19 +2645,22 @@ function renderKidMode(){
       <button class="kidmode-btn" onclick="exitKidMode()">Parent</button>
     </div>
     ${todayCard}
-    ${kidGalleryHTML(k)}
     ${ups.map(c=>{
       const n = daysUntil(c.testDate); const t = typeMeta(c.type);
+      const hasWords = c.words && c.words.length;
+      const fed = LOG.some(l=>l.kidId===k.id && l.date===todayStr() && l.practice);
       return `<div class="kidcard">
         <div class="kc-top">
           <span class="kc-badge ${cdClass(n)}">${cdLabel(n)}</span>
-          <span class="kc-title">${t.icon} ${esc(subjName(c.subject))}</span>
+          <span class="kc-title">${t.icon} ${esc(subjName(c.subject))} ${esc(t.name)}</span>
         </div>
-        <div class="muted">${esc(t.name)}${c.note?' · '+esc(c.note):''} · ${esc(fmtNice(c.testDate))}</div>
-        ${c.words && c.words.length?`<div class="prog" id="prog-${c.id}" style="margin-top:10px">${tickCount(c)} / ${c.words.length} studied</div>${tickableWords(c, true)}`:''}
+        <div class="muted">${esc(fmtNice(c.testDate))}${c.note?' · '+esc(c.note):''}</div>
+        ${hasWords?`<div style="margin-top:10px;font-weight:800;color:var(--kid)">${fed?'🍎 Practised today — pet fed!':'✏️ Practise your words → feed your pet! 🍎'}</div>
+        <div class="prog" id="prog-${c.id}" style="margin-top:6px">${tickCount(c)} / ${c.words.length} studied</div>${tickableWords(c, true)}`:''}
         <img src="${capURL(c,'full')}" alt="" loading="lazy">
       </div>`;
     }).join('')}
+    ${kidGalleryHTML(k)}
     <button class="exitkid" onclick="exitKidMode()">switch to parent view</button>
     </div>
     </div>`;
