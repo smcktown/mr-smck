@@ -467,7 +467,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.11.0';
+const VERSION = '0.12.0';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -476,6 +476,61 @@ const SUBJECTS = [
   {k:'MA', name:'Math',    abbr:'Math', color:'#7c3aed'},
   {k:'SC', name:'Science', abbr:'Sci',  color:'#059669'},
 ];
+
+// Built-in MOE-based syllabus defaults, editable per school. P3 is from real ACS(J) materials;
+// other levels are standard MOE topics you can tweak. Each entry: {t: chapter, term: 1–4}.
+const CURRICULUM = {
+  P1: {
+    EN: [{t:'STELLAR Units 1–2',term:1},{t:'STELLAR Units 3–4',term:2},{t:'STELLAR Units 5–6',term:3},{t:'STELLAR Units 7–8 + revision',term:4}],
+    CL: [{t:'核心课文 1–4',term:1},{t:'核心课文 5–8',term:2},{t:'核心课文 9–12',term:3},{t:'核心课文 13–16 + 复习',term:4}],
+    MA: [{t:'Numbers to 10',term:1},{t:'Number Bonds',term:1},{t:'Addition & Subtraction within 20',term:1},{t:'Shapes & Patterns',term:2},{t:'Ordinal Numbers',term:2},{t:'Numbers to 100',term:2},{t:'Addition & Subtraction within 100',term:3},{t:'Multiplication',term:3},{t:'Division',term:3},{t:'Length',term:4},{t:'Time',term:4},{t:'Money',term:4},{t:'Picture Graphs',term:4}],
+    SC: []
+  },
+  P2: {
+    EN: [{t:'STELLAR Units 1–2',term:1},{t:'STELLAR Units 3–4',term:2},{t:'STELLAR Units 5–6',term:3},{t:'All units + revision',term:4}],
+    CL: [{t:'核心课文 1–5',term:1},{t:'核心课文 6–10',term:2},{t:'核心课文 11–15',term:3},{t:'核心课文 16–20 + 看图写话',term:4}],
+    MA: [{t:'Numbers to 1000',term:1},{t:'Addition & Subtraction within 1000',term:1},{t:'Multiplication & Division (2, 5, 10)',term:2},{t:'Length (m, cm)',term:2},{t:'Multiplication & Division (3, 4)',term:3},{t:'Mass (kg, g)',term:3},{t:'Money',term:3},{t:'Fractions',term:4},{t:'Time',term:4},{t:'Volume',term:4},{t:'Picture Graphs',term:4},{t:'2D & 3D Shapes',term:4}],
+    SC: []
+  },
+  P3: {
+    EN: [{t:'STELLAR Units 1–2',term:1},{t:'STELLAR Units 3–4',term:2},{t:'STELLAR Units 5–6',term:3},{t:'All P3 STELLAR units + revision',term:4}],
+    CL: [{t:'会话 第一到第三课',term:1},{t:'核心课文 1–6',term:2},{t:'看图写段',term:3},{t:'核心课文 1–16 + 复习',term:4}],
+    MA: [{t:'Numbers to 10,000',term:1},{t:'Addition & Subtraction within 10,000',term:1},{t:'Money',term:1},{t:'Multiplication & Division',term:2},{t:'Word Problems (4 operations)',term:2},{t:'Bar Graphs',term:2},{t:'Angles',term:3},{t:'Perpendicular & Parallel Lines',term:3},{t:'Fractions',term:3},{t:'Word Problems (Whole Numbers)',term:3},{t:'Revision (all P1–P3)',term:4}],
+    SC: [{t:'Diversity of Living & Non-Living Things',term:1},{t:'Classification of Living Things',term:2},{t:'Diversity of Materials',term:2},{t:'Life Cycles of Plants',term:3},{t:'Life Cycles of Animals',term:3},{t:'Magnets',term:4},{t:'Revision (all P3)',term:4}]
+  },
+  P4: {
+    EN: [{t:'STELLAR Units 1–2',term:1},{t:'STELLAR Units 3–4',term:2},{t:'STELLAR Units 5–6',term:3},{t:'All units + revision',term:4}],
+    CL: [{t:'核心课文 1–5',term:1},{t:'核心课文 6–10',term:2},{t:'核心课文 11–15',term:3},{t:'核心课文 16–20 + 作文 + 复习',term:4}],
+    MA: [{t:'Numbers to 100,000',term:1},{t:'Factors & Multiples',term:1},{t:'Multiplication & Division',term:1},{t:'Fractions',term:2},{t:'Mixed Numbers & Improper Fractions',term:2},{t:'Decimals',term:3},{t:'Angles',term:3},{t:'Squares & Rectangles',term:3},{t:'Symmetry',term:4},{t:'Area & Perimeter',term:4},{t:'Time',term:4},{t:'Tables & Line Graphs',term:4}],
+    SC: [{t:'Matter (three states)',term:1},{t:'Heat & Temperature',term:2},{t:'Light & Shadows',term:3},{t:'Magnets',term:3},{t:'Plant & Human Systems',term:4},{t:'Revision (all P4)',term:4}]
+  },
+  P5: {
+    EN: [{t:'Units 1–3',term:1},{t:'Units 4–6',term:2},{t:'Units 7–9',term:3},{t:'Revision + composition & comprehension',term:4}],
+    CL: [{t:'核心课文 1–4',term:1},{t:'核心课文 5–8',term:2},{t:'核心课文 9–12',term:3},{t:'核心课文 13–16 + 作文 + 复习',term:4}],
+    MA: [{t:'Whole Numbers & Four Operations',term:1},{t:'Fractions',term:1},{t:'Area of Triangle',term:2},{t:'Ratio',term:2},{t:'Volume',term:2},{t:'Decimals',term:3},{t:'Percentage',term:3},{t:'Average & Rate',term:3},{t:'Angles',term:4},{t:'Triangles & Quadrilaterals',term:4},{t:'Nets',term:4}],
+    SC: [{t:'Cells',term:1},{t:'Plant & Human Reproductive Systems',term:1},{t:'Water & Changes of State',term:2},{t:'Electrical Systems',term:2},{t:'Forces',term:3},{t:'Energy (forms & conversion)',term:3},{t:'Revision (all P5)',term:4}]
+  },
+  P6: {
+    EN: [{t:'Units 1–3',term:1},{t:'Units 4–6',term:2},{t:'Comprehension & composition intensive',term:3},{t:'PSLE revision',term:4}],
+    CL: [{t:'核心课文 1–4',term:1},{t:'核心课文 5–8',term:2},{t:'作文 + 理解 intensive',term:3},{t:'PSLE 复习',term:4}],
+    MA: [{t:'Algebra',term:1},{t:'Fractions',term:1},{t:'Ratio',term:1},{t:'Percentage',term:2},{t:'Speed',term:2},{t:'Circles',term:2},{t:'Pie Charts',term:3},{t:'Area & Perimeter',term:3},{t:'Volume & Solid Figures',term:3},{t:'PSLE revision',term:4}],
+    SC: [{t:'Energy (forms, sources, conversion)',term:1},{t:'Forces',term:2},{t:'Electrical Systems',term:2},{t:'Adaptations',term:3},{t:'Interactions & Food Chains',term:3},{t:"Man's Impact on the Environment",term:3},{t:'PSLE revision',term:4}]
+  }
+};
+// fill a kid's syllabus from the library; by default only fills subjects that are still empty
+function seedSyllabusForKid(kid, overwrite){
+  const lib = CURRICULUM[kid.level]; if(!lib) return 0;
+  if(!kid.syllabus) kid.syllabus = {};
+  let filled = 0;
+  (kid.subjects && kid.subjects.length ? kid.subjects : SUBJECTS.map(s=>s.k)).forEach(sk=>{
+    const def = lib[sk];
+    if(def && def.length && (overwrite || !(kid.syllabus[sk] && kid.syllabus[sk].length))){
+      kid.syllabus[sk] = def.map(c=>({t:c.t, term:c.term}));
+      filled++;
+    }
+  });
+  return filled;
+}
 function subjAbbr(k){ const s=SUBJECTS.find(x=>x.k===k); return s ? s.abbr : k; }
 const TYPES = [
   {k:'spelling', name:'Spelling / 听写', icon:'✏️'},
@@ -1645,24 +1700,47 @@ function planHTML(){
 }
 
 /* ----- exam form ----- */
+function examChaptersInner(k, subject, checkedTopics){
+  if(!subject) return `<div class="small muted">Pick a subject above to see its chapters.</div>`;
+  const syl = ((k.syllabus && k.syllabus[subject]) || []);
+  if(!syl.length) return `<div class="small muted">No chapters saved for ${esc(subjName(subject))} yet — add them in Year syllabus, or use “Other topics” below.</div>`;
+  const chk = new Set(checkedTopics || []);
+  return syl.map(c=>`<button type="button" class="chip sm ${chk.has(c.t)?'on':''}" data-topic="${esc(c.t)}" onclick="this.classList.toggle('on')">${c.term?`<span class="muted">T${c.term}</span> `:''}${esc(c.t)}</button>`).join('');
+}
+function examPickSubject(el){
+  el.parentElement.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  const box = $('ex_chapters'); if(box) box.innerHTML = examChaptersInner(activeKid(), el.dataset.s, null);
+}
+function examSetType(el){
+  el.parentElement.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  const nm = $('ex_name'); if(nm && !nm.value.trim()) nm.value = el.dataset.t;
+}
 function openExamForm(id){
   const k = activeKid();
   const e = id ? k.plan.exams.find(x=>x.id===id) : null;
+  const subs = (k.subjects&&k.subjects.length?k.subjects:SUBJECTS.map(s=>s.k));
+  const curSub = e ? e.subject : subs[0];
   const m = $('modal');
   m.innerHTML = `<div class="mback" onclick="closeModal()"></div>
   <div class="msheet"><div class="grab"></div>
     <h3 style="font-size:17px;font-weight:800;margin-bottom:16px">${e?'Edit exam':'Add exam'}</h3>
     <div class="field"><label>Subject</label><div class="chiprow" id="ex_sub">
-      ${(k.subjects&&k.subjects.length?k.subjects:SUBJECTS.map(s=>s.k)).map(sk=>`<button class="chip ${e&&e.subject===sk?'on':''}" data-s="${sk}" onclick="selOne(this)">${esc(subjName(sk))}</button>`).join('')}
+      ${subs.map(sk=>`<button class="chip ${sk===curSub?'on':''}" data-s="${sk}" onclick="examPickSubject(this)">${esc(subjName(sk))}</button>`).join('')}
     </div></div>
-    <div class="field"><label>Name</label><input type="text" id="ex_name" value="${e?esc(e.name):''}" placeholder="e.g. WA3 · EYE Paper"></div>
+    <div class="field"><label>Type</label><div class="chiprow" id="ex_type">
+      ${['Paper','Composition','Oral','Listening','WA','EYE'].map(t=>`<button class="chip ${e&&(e.name||'').toLowerCase()===t.toLowerCase()?'on':''}" data-t="${t}" onclick="examSetType(this)">${t}</button>`).join('')}
+    </div></div>
+    <div class="field"><label>Name</label><input type="text" id="ex_name" value="${e?esc(e.name):''}" placeholder="e.g. WA3 English Writing"></div>
     <div class="field"><label>Date</label><input type="date" id="ex_date" value="${e?esc(e.date):''}"></div>
-    <div class="field"><label>Chapters / topics to revise (optional, one per line)</label>
-      <textarea id="ex_topics" placeholder="Angles&#10;Perpendicular & Parallel Lines&#10;Fractions&#10;Word Problems">${e&&e.topics?esc(e.topics.join('\n')):''}</textarea>
-      <div class="small muted" style="margin-top:5px">The plan spreads these across the ${esc(k.name)}'s study days in the 2 weeks before the exam — one topic per session, un-revised ones first.</div>
+    <div class="field"><label>Chapters being tested — tap to select</label>
+      <div class="chiprow" id="ex_chapters">${examChaptersInner(k, curSub, e?e.topics:null)}</div>
+      <div class="small muted" style="margin-top:6px">Pulled from ${esc(k.name)}'s syllabus. The plan spreads the ticked chapters across study days in the 2 weeks before the exam.</div>
     </div>
-    ${e&&e.topics&&e.topics.length?`<div class="field"><label>Revised so far — tap to tick</label>
-      <div class="chiprow">${e.topics.map(tp=>`<button class="chip sm ${e.ticks&&e.ticks[tp]?'on':''}" onclick="toggleExamTopicByName('${e.id}','${esc(tp).replace(/'/g,"\\'")}');openExamForm('${e.id}')">${esc(tp)}</button>`).join('')}</div></div>`:''}
+    <details class="field"><summary class="small muted" style="cursor:pointer;padding:4px 0">＋ Other topics (not in the syllabus)</summary>
+      <textarea id="ex_topics" style="margin-top:8px" placeholder="One per line">${e&&e.topics?esc(e.topics.filter(t=>!((k.syllabus&&k.syllabus[e.subject])||[]).some(c=>c.t===t)).join('\n')):''}</textarea>
+    </details>
     <button class="btn" onclick="saveExam(${e?`'${e.id}'`:'null'})">💾 Save</button>
     ${e?`<button class="btn danger" style="margin-top:8px" onclick="delExam('${e.id}')">🗑 Delete</button>`:''}
   </div>`;
@@ -1675,8 +1753,12 @@ function saveExam(id){
   const date = $('ex_date').value;
   if(!subEl){ toast('Pick a subject'); return; }
   if(!date){ toast('Pick a date'); return; }
-  const name = $('ex_name').value.trim();
-  const topics = parseTopics($('ex_topics').value);
+  let name = $('ex_name').value.trim();
+  const typeEl = document.querySelector('#ex_type .chip.on');
+  if(!name && typeEl) name = typeEl.dataset.t;
+  const checked = [...document.querySelectorAll('#ex_chapters .chip.on')].map(x=>x.dataset.topic);
+  const typed = parseTopics(($('ex_topics')||{}).value || '');
+  const topics = [...new Set([...checked, ...typed])];
   if(id){
     const ex = k.plan.exams.find(x=>x.id===id);
     const ticks = {}; // keep ticks only for topics that still exist
@@ -2359,6 +2441,7 @@ async function confirmNewYear(yr){
         }
         k.level = picks[k.id] || k.level;
         k.syllabus = {};
+        seedSyllabusForKid(k, true);   // load the NEW level's default chapters for the fresh year
         if(k.plan){ k.plan.exams=[]; k.plan.blackouts=[]; k.plan.overrides={}; k.plan.anchor=todayStr(); }
       }
       saveS();
@@ -2471,14 +2554,20 @@ function saveKid(id){
   const colorEl = document.querySelector('#kf_colors .colorsw.on');
   const color = colorEl ? colorEl.dataset.c : KID_COLORS[0];
   const subjects = [...document.querySelectorAll('#kf_subs .chip.on')].map(x=>x.dataset.s);
+  let seeded = 0, target;
   if(id){
-    Object.assign(kidById(id), {name, level, color, subjects});
+    target = kidById(id);
+    Object.assign(target, {name, level, color, subjects});
+    seeded = seedSyllabusForKid(target);   // fills only subjects still empty (safe on level change)
   }else{
     const nk = {id:uid(), name, level, color, subjects, plan: defaultPlan(subjects)};
     migrateKid(nk);   // give the new kid their own pet, collection & syllabus
+    seeded = seedSyllabusForKid(nk);       // pre-load the level's default chapters
     S.kids.push(nk); S.activeKidId = S.activeKidId || nk.id;
   }
-  saveS(); closeModal(); toast('✅ Saved'); render();
+  saveS(); closeModal();
+  toast(seeded ? `✅ Saved · loaded the ${esc(level)} syllabus (edit in Calendar)` : '✅ Saved');
+  render();
 }
 function askDeleteKid(id){
   const k = kidById(id);
