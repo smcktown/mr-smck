@@ -467,7 +467,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.12.0';
+const VERSION = '0.12.1';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -1712,10 +1712,17 @@ function examPickSubject(el){
   el.classList.add('on');
   const box = $('ex_chapters'); if(box) box.innerHTML = examChaptersInner(activeKid(), el.dataset.s, null);
 }
-function examSetType(el){
+function selExamChip(el){
+  const wasOn = el.classList.contains('on');
   el.parentElement.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
-  el.classList.add('on');
-  const nm = $('ex_name'); if(nm && !nm.value.trim()) nm.value = el.dataset.t;
+  if(!wasOn) el.classList.add('on');   // tapping the active chip clears it (round/component optional)
+  examSyncName();
+}
+function examSyncName(){
+  const r = document.querySelector('#ex_round .chip.on');
+  const c = document.querySelector('#ex_comp .chip.on');
+  const nm = $('ex_name'); if(!nm) return;
+  nm.value = [r&&r.dataset.r, c&&c.dataset.c].filter(Boolean).join(' · ');
 }
 function openExamForm(id){
   const k = activeKid();
@@ -1729,8 +1736,11 @@ function openExamForm(id){
     <div class="field"><label>Subject</label><div class="chiprow" id="ex_sub">
       ${subs.map(sk=>`<button class="chip ${sk===curSub?'on':''}" data-s="${sk}" onclick="examPickSubject(this)">${esc(subjName(sk))}</button>`).join('')}
     </div></div>
-    <div class="field"><label>Type</label><div class="chiprow" id="ex_type">
-      ${['Paper','Composition','Oral','Listening','WA','EYE'].map(t=>`<button class="chip ${e&&(e.name||'').toLowerCase()===t.toLowerCase()?'on':''}" data-t="${t}" onclick="examSetType(this)">${t}</button>`).join('')}
+    <div class="field"><label>Round</label><div class="chiprow" id="ex_round">
+      ${['WA1','WA2','WA3','EYE'].map(r=>`<button class="chip ${e&&(e.name||'').toUpperCase().includes(r)?'on':''}" data-r="${r}" onclick="selExamChip(this)">${r}</button>`).join('')}
+    </div></div>
+    <div class="field"><label>Component <span class="muted small">— languages have several</span></label><div class="chiprow" id="ex_comp">
+      ${['Paper','Composition','Oral','Listening'].map(c=>`<button class="chip ${e&&(e.name||'').toLowerCase().includes(c.toLowerCase())?'on':''}" data-c="${c}" onclick="selExamChip(this)">${c}</button>`).join('')}
     </div></div>
     <div class="field"><label>Name</label><input type="text" id="ex_name" value="${e?esc(e.name):''}" placeholder="e.g. WA3 English Writing"></div>
     <div class="field"><label>Date</label><input type="date" id="ex_date" value="${e?esc(e.date):''}"></div>
@@ -1754,8 +1764,10 @@ function saveExam(id){
   if(!subEl){ toast('Pick a subject'); return; }
   if(!date){ toast('Pick a date'); return; }
   let name = $('ex_name').value.trim();
-  const typeEl = document.querySelector('#ex_type .chip.on');
-  if(!name && typeEl) name = typeEl.dataset.t;
+  if(!name){
+    const r = document.querySelector('#ex_round .chip.on'), c = document.querySelector('#ex_comp .chip.on');
+    name = [r&&r.dataset.r, c&&c.dataset.c].filter(Boolean).join(' · ');
+  }
   const checked = [...document.querySelectorAll('#ex_chapters .chip.on')].map(x=>x.dataset.topic);
   const typed = parseTopics(($('ex_topics')||{}).value || '');
   const topics = [...new Set([...checked, ...typed])];
