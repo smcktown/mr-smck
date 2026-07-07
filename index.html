@@ -473,7 +473,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.13.0';
+const VERSION = '0.13.1';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -911,6 +911,12 @@ function computePlan(kid, ds){
   const b = (kid.plan.blackouts||[]).find(b=> b.start<=ds && ds<=b.end);
   if(b) return Object.assign(out, {kind:'blackout', label:b.label});
 
+  // a Busy or Rest weekday is OFF — and this wins over test/exam-day study, so a busy day
+  // stays busy even when a spelling/听写 test or exam lands on it. (The test banner still shows.)
+  const r = (kid.plan.rhythm||{})[strToDate(ds).getDay()] || {mode:'avail'};
+  if(r.mode==='busy') return Object.assign(out, {kind:'busy', label:r.label||'Busy day'});
+  if(r.mode==='rest') return Object.assign(out, {kind:'rest'});
+
   // upcoming spelling/听写 tests are a light PRACTICE NUDGE on the ~3 nearest study days
   // before the test — they no longer hijack whole study days (keeps subjects balanced).
   out.practiceNudges = spellingNudges(kid, ds);
@@ -930,11 +936,6 @@ function computePlan(kid, ds){
       topic: syllabusTopic(kid, other, ds, dNum) || undefined,
       why:`exam's done — keep the streak with ${subjName(other)}`});
   }
-  // weekday availability
-  const r = (kid.plan.rhythm||{})[strToDate(ds).getDay()] || {mode:'avail'};
-  if(r.mode==='busy') return Object.assign(out, {kind:'busy', label:r.label||'Busy day'});
-  if(r.mode==='rest') return Object.assign(out, {kind:'rest'});
-
   const dayNum = parseInt(ds.replace(/-/g,''),10);
   // exam runway (within 14 days) gets PRIORITY on ~2 of every 3 study days;
   // the 3rd day juggles the regular current-term syllabus, so nothing stalls.
