@@ -467,7 +467,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.12.1';
+const VERSION = '0.12.2';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -955,8 +955,7 @@ function computePlan(kid, ds){
       const undone = pick.topics.filter(tp=>!(pick.ticks && pick.ticks[tp]));
       const pool = undone.length ? undone : pick.topics;
       const topic = pool[ dayNum % pool.length ];
-      asg.topic = topic;
-      asg.why = `📝 ${pick.name||'Exam'} ${cdLabel(gapDays(ds,pick.date))} · ${topic}`;
+      asg.topic = topic;   // topic shows once, in the chip below (not repeated in the why line)
     }
     return Object.assign(out, asg);
   }
@@ -965,7 +964,7 @@ function computePlan(kid, ds){
   const topic = syllabusTopic(kid, subject, ds, dayNum);
   return Object.assign(out, {kind:'study', subject,
     topic: topic || undefined,
-    why: topic ? `${termName(currentTerm(ds))} · ${topic}` : 'from the subject mix'});
+    why: topic ? termName(currentTerm(ds)) : 'from the subject mix'});
 }
 function topicChipHTML(p, mtop){
   if(!p.topic) return '';
