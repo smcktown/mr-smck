@@ -425,6 +425,8 @@ input,select,textarea{font:inherit;color:inherit}
 .kidwrap .hi{font-size:28px;font-weight:800;margin-bottom:4px}
 .kidwrap .hisub{color:var(--ink2);margin-bottom:20px;font-size:15px}
 .kidcard{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+.gallerybtn{display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .1s}
+.gallerybtn:active{transform:scale(.98)}
 .kidcard .kc-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
 .kidcard .kc-badge{font-weight:800;font-size:14px;padding:8px 12px;border-radius:11px;background:var(--accent-soft);color:var(--accent)}
 .kidcard .kc-badge.urgent{background:var(--red-soft);color:var(--red)}
@@ -473,7 +475,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.13.2';
+const VERSION = '0.13.3';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -1231,6 +1233,24 @@ function kidGalleryHTML(k){
     <div class="collectrow">${items}</div>
     ${owned.size===0?`<div class="small muted" style="margin-top:8px">Grow a pet all the way to reveal & collect it! 🥚</div>`:''}
   </div>`;
+}
+function openKidGallery(){
+  const k = activeKid(); if(!k) return;
+  const owned = new Set(k.collection||[]);
+  const items = SPECIES.map((s,i)=>
+    owned.has(i)
+      ? `<div class="collectitem got"><span class="e">${speciesVisual(i,false)}</span><span class="cn">${esc(s.name)}</span></div>`
+      : `<div class="collectitem locked"><span class="e">❔</span><span class="cn">???</span></div>`
+  ).join('');
+  const m = $('modal');
+  m.innerHTML = `<div class="mback" onclick="closeModal()"></div>
+  <div class="msheet"><div class="grab"></div>
+    <h3 style="font-size:17px;font-weight:800;margin-bottom:4px">🏆 My pets · ${owned.size}/${SPECIES.length}</h3>
+    <div class="small muted" style="margin-bottom:14px">${owned.size===0?'Grow a pet all the way to reveal & collect it! 🥚':'Keep growing pets to fill your collection! 🌟'}</div>
+    <div class="pgrid">${items}</div>
+    <button class="btn" style="margin-top:16px" onclick="closeModal()">Close</button>
+  </div>`;
+  m.classList.add('open');
 }
 function openPetGallery(){
   const k = activeKid();
@@ -2660,7 +2680,11 @@ function renderKidMode(){
         <img src="${capURL(c,'full')}" alt="" loading="lazy">
       </div>`;
     }).join('')}
-    ${kidGalleryHTML(k)}
+    <div class="kidcard gallerybtn" onclick="openKidGallery()">
+      <div style="font-size:30px">🏆</div>
+      <div style="flex:1"><div style="font-weight:800;font-size:16px">My pets</div><div class="muted">${(k.collection||[]).length}/${SPECIES.length} collected · tap to open</div></div>
+      <div style="font-size:26px;color:var(--kid);font-weight:800">›</div>
+    </div>
     <button class="exitkid" onclick="exitKidMode()">switch to parent view</button>
     </div>
     </div>`;
