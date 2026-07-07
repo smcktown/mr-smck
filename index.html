@@ -475,7 +475,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.13.3';
+const VERSION = '0.13.4';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -2665,6 +2665,11 @@ function renderKidMode(){
       <button class="kidmode-btn" onclick="exitKidMode()">Parent</button>
     </div>
     ${todayCard}
+    <div class="kidcard gallerybtn" onclick="openKidGallery()">
+      <div style="font-size:30px">🏆</div>
+      <div style="flex:1"><div style="font-weight:800;font-size:16px">My pets</div><div class="muted">${(k.collection||[]).length}/${SPECIES.length} collected · tap to open</div></div>
+      <div style="font-size:26px;color:var(--kid);font-weight:800">›</div>
+    </div>
     ${ups.map(c=>{
       const n = daysUntil(c.testDate); const t = typeMeta(c.type);
       const hasWords = c.words && c.words.length;
@@ -2680,11 +2685,6 @@ function renderKidMode(){
         <img src="${capURL(c,'full')}" alt="" loading="lazy">
       </div>`;
     }).join('')}
-    <div class="kidcard gallerybtn" onclick="openKidGallery()">
-      <div style="font-size:30px">🏆</div>
-      <div style="flex:1"><div style="font-weight:800;font-size:16px">My pets</div><div class="muted">${(k.collection||[]).length}/${SPECIES.length} collected · tap to open</div></div>
-      <div style="font-size:26px;color:var(--kid);font-weight:800">›</div>
-    </div>
     <button class="exitkid" onclick="exitKidMode()">switch to parent view</button>
     </div>
     </div>`;
