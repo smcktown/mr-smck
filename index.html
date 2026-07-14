@@ -517,7 +517,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.20.0';
+const VERSION = '0.20.1';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -2531,11 +2531,15 @@ function smartExtract(){
     const cjkOf = s => s.replace(/[^㐀-鿿，。！？：、；“”‘’]/g,'');
 
     /* ESCAPE HATCH — an explicit, unambiguous format that doesn't depend on the scan at all:
-         写: 大象          (or W:)   → she writes the 汉字
-         认: 纸 机 块 跟   (or R:)   → she writes the pinyin; a whole row can go on one line
+         写: 大象           (or W:)  → she writes the 汉字
+         认: 纸 机 块 跟    (or R:)  → she writes the pinyin; a whole row can go on one line
+         认: 觉=jiào 漂=piào         → pin the pinyin when the school's reading isn't the default
        If ANY line is tagged this way we use only the tagged lines and ignore the OCR guessing.
-       That way a mangled Live Text scan can be fixed by hand (or handed over pre-cleaned) and
-       imported exactly, instead of fighting the parser. */
+
+       The `字=pinyin` override matters: the built-in table stores ONE reading per character, and
+       for a 多音字 the school may be teaching the other one — the P2 sheet wants 睡觉 jiào, not
+       jué; 漂亮 piào, not piāo; 吐 tù, not tǔ; 倒 dǎo, not dào. Without this the card would tell
+       her that her correct answer is wrong, which is worse than not having the feature. */
     const TAG = /^\s*(写|認|认|W|R)\s*[:：]\s*(.+)$/i;
     if(text.split('\n').some(l=>TAG.test(l))){
       text.split('\n').forEach(raw=>{
@@ -2543,8 +2547,12 @@ function smartExtract(){
         const recog = /认|認|R/i.test(m[1]);
         const body = m[2].trim();
         if(recog){
-          // every character on the line is its own 我会认 item (spaces optional)
-          cjkOf(body).replace(/[，。！？：、；“”‘’]/g,'').split('').forEach(ch=> addZh(ch, pyOf(ch), 'recog'));
+          body.split(/\s+/).filter(Boolean).forEach(tok=>{
+            const ov = tok.match(/^([㐀-鿿])\s*[=＝]\s*(.+)$/);          // 觉=jiào — the school's reading wins
+            if(ov){ addZh(ov[1], pyClean(ov[2]), 'recog'); return; }
+            cjkOf(tok).replace(/[，。！？：、；“”‘’]/g,'').split('')
+              .forEach(ch=> addZh(ch, pyOf(ch), 'recog'));            // otherwise use the table
+          });
         } else {
           const w = cjkOf(body);
           if(w) addZh(w, pyOfWord(w), 'write');
@@ -2682,8 +2690,10 @@ function captureFormHTML(){
         <div class="small muted" style="margin-top:6px">Tag the lines and the app takes them <b>exactly</b> — no guessing, and the pinyin is filled in for you:
         <pre style="margin-top:6px;padding:8px;border-radius:9px;background:var(--card);overflow-x:auto;font-size:12px;line-height:1.5">写: 大象
 写: 我们来玩布娃娃吧。
-认: 纸 机 块 跟 棋 搭</pre>
-        <b>写</b> = she writes the 汉字 · <b>认</b> = she writes the pinyin (put a whole row on one line).</div>
+认: 纸 机 块 跟 棋 搭
+认: 觉=jiào 漂=piào</pre>
+        <b>写</b> = she writes the 汉字 · <b>认</b> = she writes the pinyin (put a whole row on one line).<br>
+        For a <b>多音字</b>, pin the school's reading with <b>字=pinyin</b> (睡<b>觉</b> is jiào, not jué).</div>
       </details>
     </div>`):''}
     <div class="field"><label>Note (optional)</label>
