@@ -517,7 +517,7 @@ input,select,textarea{font:inherit;color:inherit}
    the rename). Calendar auto-plan · subject mix · chapters · streaks.
    ================================================================ */
 
-const VERSION = '0.20.1';
+const VERSION = '0.21.0';
 const LS_KEY  = 'migistudy_settings_v1';
 const LOG_KEY = 'migistudy_log_v1';
 const SUBJECTS = [
@@ -3186,6 +3186,8 @@ function moreHTML(){
     <div class="muted small">Mr 100 v${VERSION} · made with ❤️ for Tyler & Lexi<br>
     ${CAPS.length} capture${CAPS.length===1?'':'s'} · ${LOG.length} study session${LOG.length===1?'':'s'} logged · everything stays on this device<br>
     Coming next — Progress (scores per subject, planned vs done)</div>
+    <button class="btn ghost sm" style="margin-top:10px" onclick="checkUpdate(true)">🔄 Check for updates</button>
+    <div class="small muted" style="margin-top:6px">The app checks on its own each time you open it. Updating never touches your kids' data.</div>
   </div>`;
 }
 
@@ -3405,6 +3407,45 @@ function finishSetup(){
 }
 
 /* ---------------- BOOT ---------------- */
+/* ---------------- UPDATE CHECK ----------------
+   GitHub Pages serves this file with `cache-control: max-age=600`, so Safari will happily show a
+   10-minute-old copy of the app — and a home-screen web app can sit on it even longer. There's no
+   service worker, so nothing tells it to look again.
+
+   Fix: ask. A cache-busted URL is a different URL, so it skips both Safari's cache and the CDN's
+   and always comes back fresh. We fetch our own page, read the VERSION out of it, and if it's
+   newer we offer a one-tap reload — also via a cache-busted URL, so the new code loads at once
+   instead of waiting out the 10 minutes. Data is untouched: it lives in localStorage/IndexedDB
+   on the same origin, so an update never costs the kids their pets, plans or photos. */
+let UPD_LAST = 0, UPD_FOUND = null;
+async function checkUpdate(manual){
+  if(!manual && Date.now() - UPD_LAST < 120000) return;      // at most every 2 min on re-open
+  UPD_LAST = Date.now();
+  try{
+    const r = await fetch(location.pathname + '?v=' + Date.now(), {cache:'no-store'});
+    if(!r.ok) throw 0;
+    const m = (await r.text()).match(/const VERSION = '([\d.]+)'/);
+    if(m && m[1] !== VERSION){ UPD_FOUND = m[1]; showUpdateBar(m[1]); return true; }
+    if(manual) toast('✅ You’re on the latest version (v'+VERSION+')');
+    return false;
+  }catch(e){ if(manual) toast('⚠️ Could not check — are you online?'); return false; }
+}
+function showUpdateBar(v){
+  if($('updbar')) return;
+  const d = document.createElement('div');
+  d.id = 'updbar';
+  d.style.cssText = 'position:fixed;left:10px;right:10px;bottom:78px;z-index:900;display:flex;gap:10px;'+
+    'align-items:center;justify-content:space-between;padding:11px 14px;border-radius:14px;'+
+    'background:var(--plum,#7c5cb0);color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.25);font-weight:700;font-size:14px';
+  d.innerHTML = `<span>🆕 Update ready — v${v}</span>
+    <span style="display:flex;gap:6px">
+      <button onclick="applyUpdate()" style="border:0;border-radius:9px;padding:7px 12px;font-weight:800;background:#fff;color:#4a3570">Update</button>
+      <button onclick="this.closest('#updbar').remove()" style="border:0;border-radius:9px;padding:7px 10px;background:rgba(255,255,255,.22);color:#fff;font-weight:800">Later</button>
+    </span>`;
+  document.body.appendChild(d);
+}
+function applyUpdate(){ location.replace(location.pathname + '?v=' + Date.now()); }
+
 async function boot(){
   loadS();
   try{
@@ -3419,7 +3460,8 @@ async function boot(){
   saveS();            // persist first-run stamp + any migrations
   render();
   fireReminders();    // OS reminders on open (if opted in)
-  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) fireReminders(); });
+  checkUpdate();      // and tell her if a newer build is live
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ fireReminders(); checkUpdate(); } });
 }
 boot();
 </script>
