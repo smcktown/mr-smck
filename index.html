@@ -697,6 +697,12 @@ function termWeek(ds){
   return Math.min(wks, Math.floor(d/7) + 1);
 }
 function termWeeks(ds){ const sp = termSpan(currentTerm(ds), ds); return Math.floor(gapDays(sp.start, sp.end)/7) + 1; }
+function yearProgress(ds){
+  // how far through the school YEAR's ~40 teaching weeks we are. Used to pace chapters that carry
+  // no T1–T4 tag (the default — chapters load untagged), so an untagged list still can't run ahead.
+  const done = 10*(currentTerm(ds)-1) + termWeek(ds);   // termWeek is 0 while school is on break
+  return Math.max(0, Math.min(1, done/40));
+}
 function subjMeta(k){ return SUBJECTS.find(x=>x.k===k) || {k, name:k, color:'#6b7085'}; }
 function subjName(k){ return subjMeta(k).name; }
 function subjBadge(k, extra){
@@ -906,9 +912,12 @@ function taughtFlags(kid, subject, ds){
   // how many of THIS term's chapters the class has plausibly reached.
   // On the school break: none yet (we revise instead). Once term starts: at least chapter 1.
   const reached = onBreak ? 0 : Math.max(1, Math.ceil(termProgress(ds) * inTermTotal));
+  // chapters with no T1–T4 tag (the default) get paced against the school YEAR instead, by their
+  // position in the list — so an untagged syllabus still can't serve chapters from next term.
+  const yearReached = Math.max(1, Math.ceil(syl.length * yearProgress(ds)));
   let seen = 0;
-  return syl.map(c=>{
-    if(!c.term) return true;               // untagged → always fair game (we can't know; don't hide it)
+  return syl.map((c,i)=>{
+    if(!c.term) return i < yearReached;    // untagged → paced by position across the year
     if(c.term < term) return true;         // earlier terms are done
     if(c.term > term) return false;        // later terms haven't happened
     return ++seen <= reached;              // this term: paced by the week we're in
